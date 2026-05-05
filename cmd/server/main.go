@@ -3,7 +3,6 @@ package main
 import (
 	g "Price/gen/bot"
 	"Price/internal/config"
-	"Price/internal/infrastructure"
 	"Price/internal/logger"
 	"context"
 	"database/sql"
@@ -76,12 +75,11 @@ func main() {
 	}
 	defer kKafka.Close()
 
-	httpFetcher := infrastructure.NewHttpFetcher()
-
 	// БД
 
-	repoProd := repo.NewPostgresProductRepo(db)
+	//repoOutbox := repo.NewOutboxRepo(db)
 
+	repoProd := repo.NewPostgresProductRepo(db)
 	repoUser := repo.NewPostgresRepository(db)
 	repoSubs := repo.NewPostgresSubscriptionRepository(db)
 
@@ -89,7 +87,7 @@ func main() {
 
 	serviceProd := sP.NewService(repoProd)
 	serviceUser := sU.NewService(repoUser)
-	serviceSubs := sS.NewService(repoSubs, httpFetcher, rDB)
+	serviceSubs := sS.NewService(repoSubs, rDB)
 
 	// Хендлер
 
@@ -107,7 +105,7 @@ func main() {
 
 	// Worker
 
-	wetchPricer := w.NewPriceWatcher(serviceProd, repoProd, serviceSubs, l, parserClient, cb)
+	wetchPricer := w.NewPriceWatcher(repoProd, serviceSubs, l, parserClient, cb)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

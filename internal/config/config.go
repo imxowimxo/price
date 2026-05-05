@@ -28,12 +28,12 @@ type Config struct {
 	}
 
 	Health struct {
-		Port string `env:"PORT" env-default:"8080"`
+		Port string `env:"PORT" env-default:":8080"`
 	}
 
 	App struct {
 		GRPCServerPort string `env:"GRPC_SERVER_PORT" env-default:":50051"`
-		ParserAddress  string `env:"PARSER_ADDRESS" env-default:"localhost:50052"`
+		ParserAddress  string `env:"PARSER_ADDRESS" env-default:"2.tcp.eu.ngrok.io:16748"`
 	}
 }
 

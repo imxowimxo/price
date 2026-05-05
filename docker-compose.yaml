@@ -41,26 +41,26 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
 
-  go_backend:
-    build:
-      context: .
-    container_name: Price_go_backend
-    ports:
-      - "50051:50051"
-      - "8080:8080"
-    environment:
-      - DB_HOST=postgres_db
-      - DB_PORT=5432
-      - DB_USER=user
-      - DB_PASSWORD=password
-      - DB_NAME=Price
-      - REDIS_HOST=redis_cache
-      - REDIS_PORT=6379
-      - PARSER_ADDRESS=192.168.1.15:50055
-    depends_on:
-      - postgres_db
-      - redis_cache
-      - kafka
+#  go_backend:
+#    build:
+#      context: .
+#    container_name: Price_go_backend
+#    ports:
+#      - "50051:50051"
+#      - "8080:8080"
+#    environment:
+#      - DB_HOST=postgres_db
+#      - DB_PORT=5432
+#      - DB_USER=user
+#      - DB_PASSWORD=password
+#      - DB_NAME=Price
+#      - REDIS_HOST=redis_cache
+#      - REDIS_PORT=6379
+#      - PARSER_ADDRESS=192.168.1.15:50055
+#    depends_on:
+#      - postgres_db
+#      - redis_cache
+#      - kafka
 
 
 volumes:
