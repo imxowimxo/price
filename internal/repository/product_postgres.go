@@ -16,7 +16,32 @@ func NewPostgresProductRepo(db *sql.DB) *PostgresProductRepo {
 	return &PostgresProductRepo{db: db}
 }
 
-// good
+func (ps *PostgresProductRepo) GetProductsToCheck(ctx context.Context) ([]pr.Product, error) {
+
+	query := `SELECT id,url,current_price,name FROM products`
+	rows, err := ps.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var list []pr.Product
+	for rows.Next() {
+		product := pr.Product{}
+		err = rows.Scan(&product.ID, &product.URL, &product.CurrentPrice, &product.Name)
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, product)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
 func (ps *PostgresProductRepo) Create(ctx context.Context, product pr.Product) (pr.Product, error) {
 	query := `INSERT INTO products (url, current_price,name) VALUES ($1, $2, $3) RETURNING id`
 	err := ps.db.QueryRowContext(ctx, query, product.URL, product.CurrentPrice, product.Name).Scan(&product.ID)
@@ -39,7 +64,6 @@ func (ps *PostgresProductRepo) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-// good
 func (ps *PostgresProductRepo) Update(ctx context.Context, id int64, name string, newPrice float64) (pr.Product, error) {
 
 	query := `

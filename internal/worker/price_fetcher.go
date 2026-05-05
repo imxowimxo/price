@@ -18,11 +18,12 @@ type PriceFetcher interface {
 
 type ProductProvider interface {
 	GetProductsToCheck(ctx context.Context) ([]product.Product, error)
-}
-
-type Outbox interface {
 	UpdatePriceWithOutbox(ctx context.Context, productID int64, newPrice float64, events []price_drop_event.PriceDropEvent) error
 }
+
+//type Outbox interface {
+//	UpdatePriceWithOutbox(ctx context.Context, productID int64, newPrice float64, events []price_drop_event.PriceDropEvent) error
+//}
 
 type SubscriptionProvider interface {
 	GetUsersForPriceDrop(ctx context.Context, productID int64, currentPrice float64) ([]int64, error)
@@ -30,21 +31,21 @@ type SubscriptionProvider interface {
 
 type PriceWatcher struct {
 	productProvider ProductProvider
-	outbox          Outbox
-	subProvider     SubscriptionProvider
-	l               *slog.Logger
-	parser          par.GetPriceClient
-	br              *inf.CircuitBreaker
+	//outbox          Outbox
+	subProvider SubscriptionProvider
+	l           *slog.Logger
+	parser      par.GetPriceClient
+	br          *inf.CircuitBreaker
 }
 
-func NewPriceWatcher(pp ProductProvider, outbox Outbox, sp SubscriptionProvider, l *slog.Logger, parser par.GetPriceClient, br *inf.CircuitBreaker) *PriceWatcher {
+func NewPriceWatcher(pp ProductProvider, sp SubscriptionProvider, l *slog.Logger, parser par.GetPriceClient, br *inf.CircuitBreaker) *PriceWatcher {
 	return &PriceWatcher{
 		productProvider: pp,
-		outbox:          outbox,
-		subProvider:     sp,
-		l:               l,
-		parser:          parser,
-		br:              br,
+		//outbox:          outbox,
+		subProvider: sp,
+		l:           l,
+		parser:      parser,
+		br:          br,
 	}
 }
 
@@ -128,7 +129,9 @@ Loop:
 
 			if err != nil {
 				if errors.Is(err, inf.ErrCircuitOpen) {
-					w.l.Warn("пропуск товара: парсер временно недоступен", slog.Int64("product_id", p.ID))
+					w.l.Warn("не удалось получить цену, пробуем еще...",
+						slog.Any("error", err),
+					)
 					return
 				}
 
@@ -166,7 +169,7 @@ Loop:
 						}
 						events = append(events, event)
 					}
-					err = w.outbox.UpdatePriceWithOutbox(ctx, p.ID, price.Price, events)
+					err = w.productProvider.UpdatePriceWithOutbox(ctx, p.ID, price.Price, events)
 					if err != nil {
 						w.l.Error("ошибка функции UpdatePriceWithOutbox")
 						return

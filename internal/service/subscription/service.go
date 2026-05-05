@@ -23,21 +23,16 @@ type Service interface {
 	GetSub(ctx context.Context, userID int64, productID int64) (sub.Subscription, error)
 }
 
-type PriceFetcher interface {
-	FetchPrice(ctx context.Context, url string) (float64, error)
-}
-
 type SubscriptionService struct {
-	repo    sub.Repository
-	fetcher PriceFetcher
-	r       *redis.Client
+	repo sub.Repository
+
+	r *redis.Client
 }
 
-func NewService(repo sub.Repository, fetch PriceFetcher, r *redis.Client) *SubscriptionService {
+func NewService(repo sub.Repository, r *redis.Client) *SubscriptionService {
 	return &SubscriptionService{
-		repo:    repo,
-		fetcher: fetch,
-		r:       r,
+		repo: repo,
+		r:    r,
 	}
 }
 
