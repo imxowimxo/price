@@ -69,8 +69,8 @@ func main() {
 	defer rDB.Close()
 
 	kKafka := kafka.Writer{
-		Addr:     kafka.TCP(""),
-		Topic:    "price",
+		Addr:     kafka.TCP(cfg.Kafka.Brokers...),
+		Topic:    cfg.Kafka.Topic,
 		Balancer: &kafka.LeastBytes{},
 	}
 	defer kKafka.Close()

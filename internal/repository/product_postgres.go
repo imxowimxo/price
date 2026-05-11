@@ -65,12 +65,11 @@ func (ps *PostgresProductRepo) Delete(ctx context.Context, id int64) error {
 }
 
 func (ps *PostgresProductRepo) Update(ctx context.Context, id int64, name string, newPrice float64) (pr.Product, error) {
-
 	query := `
         UPDATE products 
         SET current_price = $1, name = $2 
         WHERE id = $3 
-        RETURNING id, url, price, name
+        RETURNING id, url, current_price, name
     `
 
 	var product pr.Product

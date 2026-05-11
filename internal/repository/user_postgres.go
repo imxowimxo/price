@@ -17,6 +17,8 @@ func NewPostgresRepository(db *sql.DB) *PostgresRepository {
 }
 
 func (p *PostgresRepository) Create(ctx context.Context, user us.User) (us.User, error) {
+    // бот спамил ошибками при нажатии кнопок, потому что пытался
+    // создать юзера, который уже есть, и ловил ошибку уникальности tg_id.
 	query := `INSERT INTO users(username,tg_id) VALUES ($1, $2) RETURNING id`
 	err := p.db.QueryRowContext(ctx, query, user.Username, user.TgID).Scan(&user.ID)
 	if err != nil {

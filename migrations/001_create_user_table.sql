@@ -1,6 +1,6 @@
 CREATE TABLE users (
-                       id BIGINT PRIMARY KEY,
+                       id BIGSERIAL PRIMARY KEY,
                        username TEXT,
-                       tg_id BIGINT PRIMARY KEY
+                       tg_id BIGINT UNIQUE
 
 );

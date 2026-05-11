@@ -33,7 +33,7 @@ type Config struct {
 
 	App struct {
 		GRPCServerPort string `env:"GRPC_SERVER_PORT" env-default:":50051"`
-		ParserAddress  string `env:"PARSER_ADDRESS" env-default:"2.tcp.eu.ngrok.io:16748"`
+		ParserAddress  string `env:"PARSER_ADDRESS" env-default:"parser:50051"`
 	}
 }
 
