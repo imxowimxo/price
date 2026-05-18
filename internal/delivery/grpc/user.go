@@ -12,11 +12,10 @@ import (
 
 func (h *Handler) AddUser(ctx context.Context, req *g.CreateUser) (*g.NewUser, error) {
 
-	// TODO: [Имя друга], тут терялся TgID и Username при маппинге из gRPC.
-    // Нужно переложить их из req в структуру User, иначе в сервис улетает пустая строка и TgID = 0.
-    user := us.User{
-        ID: req.UserId, // <-- Заменить на TgID: req.UserId, Username: req.UserName,
-    }
+	user := us.User{
+		TgID:     req.UserId,
+		Username: req.UserName,
+	}
 	newUser, err := h.serviceUser.Create(ctx, user)
 	if err != nil {
 		log.Printf("[gRPC AddUser] ошибка создания пользователя %d: %v", req.UserId, err)

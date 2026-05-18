@@ -22,9 +22,6 @@ func NewService(repo us.Repository) Service {
 }
 
 func (s *service) Create(ctx context.Context, user us.User) (us.User, error) {
-	if user.Username == "" {
-		return us.User{}, errors.New("username не может быть пустым")
-	}
 
 	if user.TgID == 0 {
 		return us.User{}, errors.New("пустое тг айди пользователя")
