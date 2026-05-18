@@ -27,23 +27,32 @@ func (ps *PostgresSubscriptionRepository) Create(ctx context.Context, subscripti
 	return subscription, nil
 }
 
-func (ps *PostgresSubscriptionRepository) GetProduct(ctx context.Context, userID int64) ([]p.Product, error) {
+func (ps *PostgresSubscriptionRepository) GetProduct(ctx context.Context, userID int64) ([]s.ProductWithSubDTO, error) {
 
-	query := `SELECT products.id,products.url,products.price,products.name FROM subscriptions JOIN products ON subscriptions.product_id = products.id WHERE subscriptions.user_id = $1`
+	query := `SELECT 
+    p.id, 
+    p.url, 
+    p.current_price, 
+    p.name, 
+    s.target_price 
+FROM subscriptions s 
+JOIN products p ON s.product_id = p.id 
+WHERE s.user_id = $1`
+
 	rows, err := ps.db.QueryContext(ctx, query, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	list := make([]p.Product, 0)
+	list := make([]s.ProductWithSubDTO, 0)
 	for rows.Next() {
-		product := p.Product{}
-		err1 := rows.Scan(&product.ID, &product.URL, &product.CurrentPrice, &product.Name)
+		dto := s.ProductWithSubDTO{}
+		err1 := rows.Scan(&dto.ID, &dto.URL, &dto.CurrentPrice, &dto.Name, &dto.TargetPrice)
 		if err1 != nil {
 			return nil, err1
 		}
-		list = append(list, product)
+		list = append(list, dto)
 	}
 
 	if err2 := rows.Err(); err2 != nil {

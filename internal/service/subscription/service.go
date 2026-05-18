@@ -2,6 +2,7 @@ package subscription
 
 import (
 	"Price/internal/domain/product"
+	sR "Price/internal/domain/subscription"
 	sub "Price/internal/domain/subscription"
 	"context"
 	"encoding/json"
@@ -15,7 +16,7 @@ import (
 
 type Service interface {
 	Create(ctx context.Context, subscription sub.Subscription) (sub.Subscription, error)
-	ListAll(ctx context.Context, userID int64) ([]product.Product, error)
+	ListAll(ctx context.Context, userID int64) ([]sR.ProductWithSubDTO, error)
 	GetSubscribedUsers(ctx context.Context, prod int64) ([]int64, error)
 	GetAll(ctx context.Context) ([]product.Product, error)
 	UpdatePrice(ctx context.Context, userID int64, prodID int64, price float64) error
@@ -55,7 +56,7 @@ func (s *SubscriptionService) Create(ctx context.Context, subscription sub.Subsc
 	return s.repo.Create(ctx, subscription)
 }
 
-func (s *SubscriptionService) ListAll(ctx context.Context, userID int64) ([]product.Product, error) {
+func (s *SubscriptionService) ListAll(ctx context.Context, userID int64) ([]sR.ProductWithSubDTO, error) {
 
 	return s.repo.GetProduct(ctx, userID)
 }

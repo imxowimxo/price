@@ -7,7 +7,7 @@ import (
 
 type Repository interface {
 	Create(ctx context.Context, subscription Subscription) (Subscription, error)
-	GetProduct(ctx context.Context, userID int64) ([]p.Product, error)
+	GetProduct(ctx context.Context, userID int64) ([]ProductWithSubDTO, error)
 	GetSubscribedUsers(ctx context.Context, prod int64) ([]int64, error)
 	GetAll(ctx context.Context) ([]p.Product, error)
 	UpdatePrice(ctx context.Context, userID int64, prodID int64, price float64) error

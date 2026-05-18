@@ -37,18 +37,12 @@ func (h *Handler) GetUserProducts(ctx context.Context, req *g.GetUser) (*g.Produ
 	}
 	var res g.ProductListResponse
 	for _, product := range products {
-		subs, err := h.serviceSub.GetSub(ctx, req.UserId, product.ID)
-		if err != nil {
-			log.Printf("[gRPC GetUserProducts] ошибка в получение подписки пользователя %d: %v", req.UserId, err)
-			return nil, status.Error(codes.Internal, "ошибка при получении данных подписки")
-		}
-
 		res.Products = append(res.Products, &g.Product{
 			ProductId:    product.ID,
 			Name:         product.Name,
 			Url:          product.URL,
 			CurrentPrice: product.CurrentPrice,
-			TargetPrice:  subs.TargetPrice,
+			TargetPrice:  product.TargetPrice,
 		})
 	}
 	return &res, nil
