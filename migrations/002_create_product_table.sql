@@ -1,6 +1,6 @@
 CREATE TABLE products (
-                         id UUID PRIMARY KEY,
-                         url TEXT,
-                         price NUMERIC,
-                         name TEXT,
+                        id BIGSERIAL PRIMARY KEY,
+                        url TEXT,
+                        current_price NUMERIC,
+                        name TEXT
 );

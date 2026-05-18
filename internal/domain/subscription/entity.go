@@ -7,3 +7,11 @@ type Subscription struct {
 	TargetPrice float64
 	IsTriggered bool
 }
+
+type ProductWithSubDTO struct {
+	ID           int64
+	URL          string
+	CurrentPrice float64
+	Name         string
+	TargetPrice  float64
+}

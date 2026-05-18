@@ -117,7 +117,7 @@ Loop:
 				if err == nil {
 					break
 				}
-				w.l.Warn("не удалось получить цену, пробуем еще...", slog.Int64("попытка", int64(attempt)))
+				w.l.Warn("не удалось получить цену, пробуем еще...", slog.Int64("попытка", int64(attempt)), slog.Any("error", err))
 				if attempt < 3 {
 					select {
 					case <-ctx.Done():

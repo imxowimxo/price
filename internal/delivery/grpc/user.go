@@ -13,7 +13,8 @@ import (
 func (h *Handler) AddUser(ctx context.Context, req *g.CreateUser) (*g.NewUser, error) {
 
 	user := us.User{
-		ID: req.UserId,
+		TgID:     req.UserId,
+		Username: req.UserName,
 	}
 	newUser, err := h.serviceUser.Create(ctx, user)
 	if err != nil {
@@ -31,23 +32,17 @@ func (h *Handler) GetUserProducts(ctx context.Context, req *g.GetUser) (*g.Produ
 	products, err := h.serviceSub.ListAll(ctx, req.UserId)
 	if err != nil {
 		log.Printf("[gRPC GetUserProducts] ошибка получения продуктов пользователя %d: %v", req.UserId, err)
-		newErr := status.Error(codes.Internal, "не удалось создать пользователя, внутренняя ошибка")
+		newErr := status.Error(codes.Internal, "не удалось получить список товаров")
 		return nil, newErr
 	}
 	var res g.ProductListResponse
 	for _, product := range products {
-		subs, err := h.serviceSub.GetSub(ctx, req.UserId, product.ID)
-		if err != nil {
-			log.Printf("[gRPC GetUserProducts] ошибка в получение подписки пользователя %d: %v", req.UserId, err)
-			return nil, status.Error(codes.Internal, "ошибка при получении данных подписки")
-		}
-
 		res.Products = append(res.Products, &g.Product{
 			ProductId:    product.ID,
 			Name:         product.Name,
 			Url:          product.URL,
 			CurrentPrice: product.CurrentPrice,
-			TargetPrice:  subs.TargetPrice,
+			TargetPrice:  product.TargetPrice,
 		})
 	}
 	return &res, nil
