@@ -57,7 +57,7 @@ services:
       - REDIS_HOST=redis_cache
       - REDIS_PORT=6379
       - KAFKA_BROKERS=kafka:9092
-      - PARSER_ADDRESS=parser:50051
+      - PARSER_ADDRESS=grpc_parser:50051
     depends_on:
       - postgres_db
       - redis_cache
