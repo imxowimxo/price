@@ -1,6 +1,9 @@
-package payment
+package domain
 
-import "context"
+import (
+	"context"
+	"errors"
+)
 
 type PaymentResult struct {
 	PaymentID string `json:"payment_id"`
@@ -14,3 +17,5 @@ type PaymentMethod interface {
 	CreateInvoice(ctx context.Context, userID int64) (string, error)
 	ParseCallback(ctx context.Context, res []byte, bankSign string) (*PaymentResult, error)
 }
+
+var ErrDuplicateInvoice = errors.New("invoice already exists")

@@ -1,7 +1,7 @@
-package monobank
+package infrastructure
 
 import (
-	p "Price/internal/payment"
+	p "Price/internal/payment/domain"
 	"bytes"
 	"context"
 	"crypto/ecdsa"
@@ -14,12 +14,15 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 )
 
 type MonoBank struct {
 	token  string
-	client *http.Client
 	apiURL string
+	key    string
+	mutex  *sync.Mutex
+	client *http.Client
 }
 
 type createInvoiceRequest struct {
@@ -45,12 +48,39 @@ type publicKey struct {
 	PublicKey string `json:"key"`
 }
 
-func NewMonoBank(token string, client *http.Client, apiURL string) *MonoBank {
+func NewMonoBank(token string, apiURL string, key string, mutex *sync.Mutex, client *http.Client) *MonoBank {
 	return &MonoBank{
 		token:  token,
-		client: client,
 		apiURL: apiURL,
+		key:    key,
+		mutex:  mutex,
+		client: client,
 	}
+}
+
+func (m *MonoBank) parseStringToECDSA(key string) (*ecdsa.PublicKey, error) {
+
+	pubKeyBytes, err := base64.StdEncoding.DecodeString(key)
+	if err != nil {
+		return nil, err
+	}
+
+	block, _ := pem.Decode(pubKeyBytes)
+	if block == nil {
+		return nil, errors.New("ошибка парсинга PEM")
+	}
+
+	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	ecdsaPub, ok := pub.(*ecdsa.PublicKey)
+	if !ok {
+		return nil, errors.New("ключ не являеться ECDSA")
+	}
+	return ecdsaPub, nil
+
 }
 
 func (m *MonoBank) getPublicKey(ctx context.Context) (string, error) {
@@ -88,7 +118,7 @@ func (m *MonoBank) CreateInvoice(ctx context.Context, userID int64) (string, err
 		Amount:     5000,
 		UserID:     user,
 		Ccy:        980,
-		WebHookUrl: "пока нет сервера,будет позже и добавлю сюда адрес",
+		WebHookUrl: "",
 	}
 
 	body, err := json.Marshal(invoiceReq)
@@ -125,41 +155,53 @@ func (m *MonoBank) CreateInvoice(ctx context.Context, userID int64) (string, err
 }
 
 func (m *MonoBank) ParseCallback(ctx context.Context, res []byte, bankSign string) (*p.PaymentResult, error) {
-	result, err := m.getPublicKey(ctx)
-	if err != nil {
-		return nil, err
+	m.mutex.Lock()
+	if m.key == "" {
+		result, err := m.getPublicKey(ctx)
+		if err != nil {
+			m.mutex.Unlock()
+			return nil, err
+		}
+		m.key = result
 	}
-
-	pubKeyBytes, err := base64.StdEncoding.DecodeString(result)
-	if err != nil {
-		return nil, err
-	}
+	m.mutex.Unlock()
 
 	bankBytes, err := base64.StdEncoding.DecodeString(bankSign)
 	if err != nil {
 		return nil, err
 	}
 
-	block, _ := pem.Decode(pubKeyBytes)
-	if block == nil {
-		return nil, errors.New("ошибка парсинга PEM")
-	}
+	currentKey := m.key
 
-	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+	m.mutex.Lock()
+	ecdsaPub, err := m.parseStringToECDSA(currentKey)
+	m.mutex.Unlock()
 	if err != nil {
 		return nil, err
-	}
-
-	ecdsaPub, ok := pub.(*ecdsa.PublicKey)
-	if !ok {
-		return nil, errors.New("ключ не являеться ECDSA")
 	}
 
 	hash := sha256.Sum256(res)
 
 	verif := ecdsa.VerifyASN1(ecdsaPub, hash[:], bankBytes)
 	if !verif {
-		return nil, errors.New("неверная подпись MonoBank")
+		m.mutex.Lock()
+		result, err := m.getPublicKey(ctx)
+		if err != nil {
+			m.mutex.Unlock()
+			return nil, err
+		}
+		m.key = result
+		m.mutex.Unlock()
+
+		ecdsaPub, err = m.parseStringToECDSA(result)
+		if err != nil {
+			return nil, err
+		}
+		verif = ecdsa.VerifyASN1(ecdsaPub, hash[:], bankBytes)
+		if !verif {
+			return nil, errors.New("ключ банка неверный")
+		}
+
 	}
 
 	req := monoWebhookRequest{}

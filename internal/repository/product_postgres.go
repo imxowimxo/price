@@ -53,7 +53,6 @@ func (ps *PostgresProductRepo) Create(ctx context.Context, product pr.Product) (
 	return product, nil
 }
 
-// good
 func (ps *PostgresProductRepo) Delete(ctx context.Context, id int64) error {
 
 	_, err := ps.db.ExecContext(ctx, "DELETE FROM products WHERE id = $1", id)
@@ -88,7 +87,6 @@ func (ps *PostgresProductRepo) Update(ctx context.Context, id int64, name string
 	return product, nil
 }
 
-// FindByID good
 func (ps *PostgresProductRepo) FindByID(ctx context.Context, id int64) (pr.Product, error) {
 	query := `SELECT id, url, current_price, name FROM products WHERE id = $1`
 
@@ -101,14 +99,12 @@ func (ps *PostgresProductRepo) FindByID(ctx context.Context, id int64) (pr.Produ
 	return product, nil
 }
 
-// good
 func (ps *PostgresProductRepo) UpdatePrice(ctx context.Context, prodID int64, newPrice float64) error {
 	query := `UPDATE products SET current_price = $1 WHERE id = $2`
 	_, err := ps.db.ExecContext(ctx, query, newPrice, prodID)
 	return err
 }
 
-// good
 func (ps *PostgresProductRepo) UpdatePriceWithOutbox(ctx context.Context, prodID int64, newPrice float64, events []price_drop_event.PriceDropEvent) error {
 
 	tx, err := ps.db.BeginTx(ctx, nil)
