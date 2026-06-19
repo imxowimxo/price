@@ -1,0 +1,39 @@
+name: Deploy price backend to VPS
+
+# Деплоит Go-бэкенд + его инфраструктуру (postgres, redis, kafka, zookeeper)
+# из этого репозитория. Бот и парсер — отдельный репозиторий, деплоятся отдельно.
+
+on:
+  push:
+    branches: [ main ]        # авто-деплой при пуше/мерже в main
+  workflow_dispatch: {}        # ручной запуск кнопкой в Actions
+
+concurrency:
+  group: deploy-price-backend  # не запускать два деплоя одновременно
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT }}      # необязательно, по умолчанию 22
+          script: |
+            set -e
+            cd "${{ secrets.DEPLOY_PATH }}"     # путь к репозиторию на сервере
+
+            git pull --ff-only origin main
+
+            # общая внешняя сеть для связи с ботом/парсером — создаём, если её нет
+            docker network inspect shared-net >/dev/null 2>&1 || docker network create shared-net
+
+            # ВАЖНО: без -v, чтобы НЕ стирать данные БД при каждом деплое.
+            # Пересобирается только go_backend, инфраструктура не пересоздаётся зря.
+            docker compose up -d --build
+
+            docker image prune -f
