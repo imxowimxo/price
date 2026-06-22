@@ -1,11 +1,13 @@
 package repository
 
 import (
-	"Price/internal/domain/price_drop_event"
+	"Price/internal/domain/outbox"
+	out "Price/internal/domain/outbox"
 	pr "Price/internal/domain/product"
 	"context"
 	"database/sql"
 	"encoding/json"
+	"strconv"
 )
 
 type PostgresProductRepo struct {
@@ -105,7 +107,7 @@ func (ps *PostgresProductRepo) UpdatePrice(ctx context.Context, prodID int64, ne
 	return err
 }
 
-func (ps *PostgresProductRepo) UpdatePriceWithOutbox(ctx context.Context, prodID int64, newPrice float64, events []price_drop_event.PriceDropEvent) error {
+func (ps *PostgresProductRepo) UpdatePriceWithOutbox(ctx context.Context, prodID int64, newPrice float64, events []outbox.PriceDropEvent) error {
 
 	tx, err := ps.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -119,11 +121,18 @@ func (ps *PostgresProductRepo) UpdatePriceWithOutbox(ctx context.Context, prodID
 	}
 
 	for _, event := range events {
-		jsonBytes, err := json.Marshal(&event)
+
+		payloadBytes, err := json.Marshal(event)
 		if err != nil {
 			return err
 		}
-		_, err = tx.ExecContext(ctx, "INSERT INTO outbox_events (payload) VALUES ($1)", jsonBytes)
+
+		messageKey := strconv.FormatInt(event.UserID, 10)
+
+		_, err = tx.ExecContext(ctx,
+			`INSERT INTO outbox_events (payload, topic_name, message_key) VALUES ($1, $2, $3)`,
+			payloadBytes, out.TopicPriceDrops, messageKey,
+		)
 		if err != nil {
 			return err
 		}

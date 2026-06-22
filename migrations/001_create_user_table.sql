@@ -4,5 +4,6 @@ CREATE TABLE users (
                        tg_id BIGINT UNIQUE,
                        premium_expires_at TIMESTAMP,
                        status TEXT DEFAULT 'free',
-                       limit_prod INT DEFAULT 10
+                       limit_prod INT DEFAULT 10,
+                       reminder BOOLEAN DEFAULT FALSE
 );

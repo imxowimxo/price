@@ -12,10 +12,12 @@ type OutboxRepo struct {
 	db *sql.DB
 }
 type OutboxEvent struct {
-	ID        uuid.UUID
-	Payload   []byte
-	Status    string
-	CreatedAt time.Time
+	ID         uuid.UUID
+	Payload    []byte
+	Status     string
+	CreatedAt  time.Time
+	Topic      string
+	MessageKey string
 }
 
 func NewOutboxRepo(db *sql.DB) *OutboxRepo {
@@ -26,7 +28,7 @@ func (o *OutboxRepo) GetPendingEvents(ctx context.Context, limit int) ([]OutboxE
 
 	var events []OutboxEvent
 
-	query := `SELECT id, payload FROM outbox_events WHERE status = 'pending' ORDER BY created_at ASC LIMIT $1`
+	query := `SELECT id, payload,topic_name,message_key FROM outbox_events WHERE status = 'pending' ORDER BY created_at ASC LIMIT $1`
 
 	rows, err := o.db.QueryContext(ctx, query, limit)
 	if err != nil {
@@ -36,7 +38,7 @@ func (o *OutboxRepo) GetPendingEvents(ctx context.Context, limit int) ([]OutboxE
 
 	for rows.Next() {
 		var event OutboxEvent
-		if err := rows.Scan(&event.ID, &event.Payload); err != nil {
+		if err := rows.Scan(&event.ID, &event.Payload, &event.Topic, &event.MessageKey); err != nil {
 			return nil, err
 		}
 		events = append(events, event)
