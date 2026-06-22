@@ -2,7 +2,7 @@ package worker
 
 import (
 	par "Price/gen/parser"
-	"Price/internal/domain/price_drop_event"
+	"Price/internal/domain/outbox"
 	"Price/internal/domain/product"
 	inf "Price/internal/infrastructure"
 	"context"
@@ -18,12 +18,8 @@ type PriceFetcher interface {
 
 type ProductProvider interface {
 	GetProductsToCheck(ctx context.Context) ([]product.Product, error)
-	UpdatePriceWithOutbox(ctx context.Context, productID int64, newPrice float64, events []price_drop_event.PriceDropEvent) error
+	UpdatePriceWithOutbox(ctx context.Context, productID int64, newPrice float64, events []outbox.PriceDropEvent) error
 }
-
-//type Outbox interface {
-//	UpdatePriceWithOutbox(ctx context.Context, productID int64, newPrice float64, events []price_drop_event.PriceDropEvent) error
-//}
 
 type SubscriptionProvider interface {
 	GetUsersForPriceDrop(ctx context.Context, productID int64, currentPrice float64) ([]int64, error)
@@ -31,11 +27,10 @@ type SubscriptionProvider interface {
 
 type PriceWatcher struct {
 	productProvider ProductProvider
-	//outbox          Outbox
-	subProvider SubscriptionProvider
-	l           *slog.Logger
-	parser      par.GetPriceClient
-	br          *inf.CircuitBreaker
+	subProvider     SubscriptionProvider
+	l               *slog.Logger
+	parser          par.GetPriceClient
+	br              *inf.CircuitBreaker
 }
 
 func NewPriceWatcher(pp ProductProvider, sp SubscriptionProvider, l *slog.Logger, parser par.GetPriceClient, br *inf.CircuitBreaker) *PriceWatcher {
@@ -63,7 +58,7 @@ func (w *PriceWatcher) Worker(ctx context.Context) error {
 			return nil
 
 		case <-ticker.C:
-			w.l.Info("горутина начала обход")
+			w.l.Info("горутины начали обход")
 			w.processTick(ctx)
 		}
 	}
@@ -146,7 +141,12 @@ Loop:
 			if price.Price != p.CurrentPrice {
 				var events []price_drop_event.PriceDropEvent
 
-				if price.Price < p.CurrentPrice && p.CurrentPrice > 0 {
+				if price.Price >= p.CurrentPrice {
+					return
+				}
+
+				if price.Price < p.CurrentPrice {
+					var events []outbox.PriceDropEvent
 					idUser, err := w.subProvider.GetUsersForPriceDrop(ctx, p.ID, price.Price)
 					if err != nil {
 						w.l.Error("ошибка получения пользователя для отправки уведомления",
@@ -156,9 +156,11 @@ Loop:
 						)
 						return
 					}
+          
+          
 
 					for _, user := range idUser {
-						event := price_drop_event.PriceDropEvent{
+						event := outbox.PriceDropEvent{
 							UserID:    user,
 							ProductID: p.ID,
 							OldPrice:  p.CurrentPrice,

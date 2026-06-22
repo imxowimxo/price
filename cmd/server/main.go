@@ -70,7 +70,6 @@ func main() {
 
 	kKafka := kafka.Writer{
 		Addr:     kafka.TCP(cfg.Kafka.Brokers...),
-		Topic:    cfg.Kafka.Topic,
 		Balancer: &kafka.LeastBytes{},
 	}
 	defer kKafka.Close()
@@ -95,7 +94,7 @@ func main() {
 
 	// Parser Service
 
-	parserConn, err := grpc.Dial(cfg.App.ParserAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	parserConn, err := grpc.Dial(cfg.App, grpc.WithTransportCredentials(insecure.NewCredentials())) // проверить позже
 	if err != nil {
 		log.Fatalf("Не удалось подключиться к микросервису парсера: %v", err)
 	}

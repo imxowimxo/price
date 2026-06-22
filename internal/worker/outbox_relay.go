@@ -1,16 +1,14 @@
 package worker
 
 import (
-	"Price/internal/domain/price_drop_event"
 	r "Price/internal/repository"
 	"context"
-	"encoding/json"
 	"log"
 	"time"
 )
 
 type Notifier interface {
-	SendPriceDrop(ctx context.Context, event price_drop_event.PriceDropEvent) error
+	SendMessage(ctx context.Context, topic string, key string, payload []byte) error
 }
 
 type OutboxRelay struct {
@@ -45,11 +43,8 @@ func (r *OutboxRelay) Run(ctx context.Context) error {
 				continue
 			}
 			for _, event := range events {
-				var priceEvent price_drop_event.PriceDropEvent
-				if err := json.Unmarshal(event.Payload, &priceEvent); err != nil {
-					r.logger.Println(err)
-				}
-				err = r.n.SendPriceDrop(ctx, priceEvent)
+
+				err = r.n.SendMessage(ctx, event.Topic, event.MessageKey, event.Payload)
 				if err != nil {
 					r.logger.Println(err)
 					continue
