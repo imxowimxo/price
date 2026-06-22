@@ -89,7 +89,7 @@ func (ps *PostgresSubscriptionRepository) GetSubscribedUsers(ctx context.Context
 }
 
 func (ps *PostgresSubscriptionRepository) UpdatePrice(ctx context.Context, userID int64, prodID int64, price float64) error {
-	_, err := ps.db.ExecContext(ctx, "UPDATE products SET price = $1 WHERE user_id = $2 AND product_id = $3", price, userID, prodID)
+	_, err := ps.db.ExecContext(ctx, "UPDATE subscriptions SET target_price = $1 WHERE user_id = $2 AND product_id = $3", price, userID, prodID)
 	return err
 }
 

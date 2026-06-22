@@ -13,4 +13,5 @@ type Repository interface {
 	UpdatePrice(ctx context.Context, userID int64, prodID int64, price float64) error
 	Delete(ctx context.Context, userID int64, prodID int64) error
 	GetSubscription(ctx context.Context, userID int64, prodID int64) (Subscription, error)
+	GetUsersForPriceDrop(ctx context.Context, productID int64, currentPrice float64) ([]int64, error)
 }

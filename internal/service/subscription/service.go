@@ -22,6 +22,7 @@ type Service interface {
 	UpdatePrice(ctx context.Context, userID int64, prodID int64, price float64) error
 	Delete(ctx context.Context, userID int64, prodID int64) error
 	GetSub(ctx context.Context, userID int64, productID int64) (sub.Subscription, error)
+	GetUsersForPriceDrop(ctx context.Context, productID int64, currentPrice float64) ([]int64, error)
 }
 
 type SubscriptionService struct {
@@ -134,5 +135,5 @@ func (s *SubscriptionService) GetSub(ctx context.Context, userID int64, productI
 	return subscription, nil
 }
 func (s *SubscriptionService) GetUsersForPriceDrop(ctx context.Context, productID int64, currentPrice float64) ([]int64, error) {
-	return s.GetUsersForPriceDrop(ctx, productID, currentPrice)
+	return s.repo.GetUsersForPriceDrop(ctx, productID, currentPrice)
 }

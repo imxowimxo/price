@@ -139,6 +139,7 @@ Loop:
 			}
 
 			if price.Price != p.CurrentPrice {
+				var events []price_drop_event.PriceDropEvent
 
 				if price.Price >= p.CurrentPrice {
 					return
@@ -155,6 +156,9 @@ Loop:
 						)
 						return
 					}
+          
+          
+
 					for _, user := range idUser {
 						event := outbox.PriceDropEvent{
 							UserID:    user,
@@ -164,14 +168,13 @@ Loop:
 						}
 						events = append(events, event)
 					}
-					err = w.productProvider.UpdatePriceWithOutbox(ctx, p.ID, price.Price, events)
-					if err != nil {
-						w.l.Error("ошибка функции UpdatePriceWithOutbox")
-						return
-					}
-
 				}
 
+				err = w.productProvider.UpdatePriceWithOutbox(ctx, p.ID, price.Price, events)
+				if err != nil {
+					w.l.Error("ошибка функции UpdatePriceWithOutbox", slog.Any("error", err))
+					return
+				}
 			}
 
 		}(item)
